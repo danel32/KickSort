@@ -5,28 +5,38 @@
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
-
-KickSort	KEYWORD1
-
-
+KickSort    KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-bubbleSort	KEYWORD2
-quickSort	KEYWORD2
-insertionSort	KEYWORD2
-shellSort	KEYWORD2
-combSort	KEYWORD2
+# Sorting Algorithms
+bubbleSort  KEYWORD2
+quickSort   KEYWORD2
+insertionSort KEYWORD2
+shellSort   KEYWORD2
+combSort    KEYWORD2
 
+# Statistical Functions
+minElement  KEYWORD2
+maxElement  KEYWORD2
+mean        KEYWORD2
+median      KEYWORD2
+mode        KEYWORD2
+stdDevPopulation  KEYWORD2
+stdDevSample       KEYWORD2
 
+# Utility Functions
+isSorted    KEYWORD2
+reverse     KEYWORD2
+indexOf     KEYWORD2
+copy        KEYWORD2
+swap        KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
-
-KickSort_Dir	LITERAL1
-ASCENDING	LITERAL1
-DESCENDING	LITERAL1
-
+KickSort_Dir   LITERAL1
+ASCENDING      LITERAL1
+DESCENDING     LITERAL1
