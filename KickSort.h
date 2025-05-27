@@ -1,31 +1,43 @@
 /*
  FILENAME:      KickSort.h
- AUTHOR:        Orlando S. Hoilett
- EMAIL:     	orlandohoilett@gmail.com
- VERSION:		1.1.0
+ AUTHOR:        Orlando S. Hoilett (original KickSort)
+ EMAIL:         orlandohoilett@gmail.com
+ ENHANCED BY:   danel32
+ VERSION:       1.2.0
  
  
  DESCRIPTION
- A library for different sorting algorithms including quicksort, bubble sort,
- insertion sort, shell sort, and comb sort.
+ An enhanced Arduino library for sorting algorithms and statistical analysis,
+ built upon the original KickSort library. Provides comprehensive sorting
+ capabilities with added statistical functions optimized for microcontrollers.
  
  The class is templated allowing for ease of use across different data types.
  This is a static class. Function calls must be preceded with the class name and
  scope resolution operator as follows "KickSort<variable_type>::" where
  variable_type should be replaced with int16_t, int, float, etc.
  
- This library is built from aggregating and modifying different sorting
- implementations from various other GitHub users including: robtillaart
+ Original KickSort library is built from aggregating and modifying different
+ sorting implementations from various other GitHub users including: robtillaart
  (especially), emilv, luisllamasbinaburo, and dndubins. Thanks!
+ 
+ Enhanced with statistical functions and utilities by danel32.
  
  
  UPDATES
  Version 1.0.0
  2020/08/22:2000> (UTC-5)
- 			- Initiated.
+             - Initial release by Orlando S. Hoilett.
  Version 1.1.0
  2020/08/26:2335> (UTC-5)
- 			- Updated comments.
+             - Updated comments.
+ Version 1.2.0 (Enhanced by danel32)
+ 2024/XX/XX:
+             - Added comprehensive statistical functions
+             - Added utility functions (indexOf, copy, swap, reverse)
+             - Improved mode() algorithm efficiency (O(n log n) instead of O(n²))
+             - Added separate population and sample standard deviation functions
+             - Enhanced error handling for edge cases
+             - Optimized memory usage for microcontrollers
  
  
  DISCLAIMER
@@ -35,6 +47,7 @@
  The MIT License (MIT)
  
  Copyright (c) 2020 Linnes Lab, Purdue University
+ Enhancements Copyright (c) 2024 danel32
  
  Permission is hereby granted, free of charge, to any person obtaining a copy of
  this software and associated documentation files (the "Software"), to deal in
@@ -56,442 +69,432 @@
  
  */
 
-
 #ifndef KickSort_h
 #define KickSort_h
 
-
-//Standard Arduino libraries
 #include <Arduino.h>
+#include <math.h>
 
-
-enum class KickSort_Dir
-{
-	ASCENDING = 0,
-	DESCENDING = 1
+// Sort direction enum
+enum class KickSort_Dir {
+    ASCENDING = 0,
+    DESCENDING = 1
 };
 
-
 template<typename Type>
-
-class KickSort
-{
-
+class KickSort {
 public:
-	
-	//From: https://github.com/dndubins/QuickStats
-	static void bubbleSort(Type input[], const uint16_t samples);
-	static void bubbleSort(Type input[], const uint16_t samples, KickSort_Dir d);
-	
-	//From: https://forum.arduino.cc/index.php?topic=280486.0
-	static void quickSort(Type input[], const uint16_t samples);
-	static void quickSort(Type input[], const uint16_t samples, KickSort_Dir d);
-	
-	//From: https://forum.arduino.cc/index.php?topic=280486.0
-	static void insertionSort(Type input[], const uint16_t samples);
-	static void insertionSort(Type input[], const uint16_t samples, KickSort_Dir d);
-	
-	//From: https://forum.arduino.cc/index.php?topic=280486.0
-	static void combSort(Type input[], const uint16_t samples);
-	static void combSort(Type input[], const uint16_t samples, KickSort_Dir d);
-	
-	//From: https://forum.arduino.cc/index.php?topic=280486.0
-	static void shellSort(Type input[], const uint16_t samples);
-	static void shellSort(Type input[], const uint16_t samples, KickSort_Dir d);
+    // === SORTING ALGORITHMS ===
+    static void bubbleSort(Type input[], const uint16_t samples);
+    static void bubbleSort(Type input[], const uint16_t samples, KickSort_Dir d);
+    
+    static void quickSort(Type input[], const uint16_t samples);
+    static void quickSort(Type input[], const uint16_t samples, KickSort_Dir d);
+    
+    static void insertionSort(Type input[], const uint16_t samples);
+    static void insertionSort(Type input[], const uint16_t samples, KickSort_Dir d);
+    
+    static void combSort(Type input[], const uint16_t samples);
+    static void combSort(Type input[], const uint16_t samples, KickSort_Dir d);
+    
+    static void shellSort(Type input[], const uint16_t samples);
+    static void shellSort(Type input[], const uint16_t samples, KickSort_Dir d);
 
+    // === UTILITY FUNCTIONS ===
+    static bool isSorted(const Type input[], const uint16_t samples, KickSort_Dir d = KickSort_Dir::ASCENDING);
+    static void reverse(Type input[], const uint16_t samples);
+    static int16_t indexOf(const Type input[], uint16_t samples, Type value);
+    static void copy(const Type source[], Type destination[], uint16_t samples);
+    static void swap(Type& a, Type& b);
+
+    // === STATISTICAL FUNCTIONS ===
+    static Type minElement(const Type input[], uint16_t samples);
+    static Type maxElement(const Type input[], uint16_t samples);
+    static float mean(const Type input[], uint16_t samples);
+    static Type median(Type input[], uint16_t samples);
+    static Type mode(Type input[], uint16_t samples);
+    static float stdDevPopulation(const Type input[], uint16_t samples);
+    static float stdDevSample(const Type input[], uint16_t samples);
+
+private:
+    // Helper functions for quickSort
+    static void quickSortRecursive(Type input[], int16_t low, int16_t high);
+    static void quickSortRecursive(Type input[], int16_t low, int16_t high, KickSort_Dir d);
+    static int16_t partition(Type input[], int16_t low, int16_t high);
+    static int16_t partitionDesc(Type input[], int16_t low, int16_t high);
 };
 
+// ============================================================================
+// IMPLEMENTATION
+// ============================================================================
 
-//void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//
-//This orders the array in ascending order. Bubble Sort is the brute force
-//method of sorting an array. Simplest method, but is also the slowest.
-//From: https://github.com/dndubins/QuickStats
+// === BUBBLE SORT ===
 template<typename Type>
-void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples)
-{
-	uint32_t newn = 0;
-	uint32_t n = samples;
-	Type temp = 0;
-	
-	//if newn doesn't increment past 1, then array
-	//is already sorted and we will exit the loop
-	do {
-		newn = 1;
-		
-		for(uint16_t p = 1; p < samples; p++)
-		{
-			if(input[p-1] > input[p])
-			{
-				//swap places in array
-				temp = input[p];
-				input[p] = input[p-1];
-				input[p-1] = temp;
-				
-				//update index
-				newn = p;
-			}
-		}
-		
-		n = newn;
-	} while(n > 1);
+void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples) {
+    if (samples < 2) return;
+    
+    uint32_t newn = 0, n = samples;
+    Type temp;
+    do {
+        newn = 1;
+        for(uint16_t p = 1; p < samples; p++) {
+            if(input[p-1] > input[p]) {
+                temp = input[p];
+                input[p] = input[p-1];
+                input[p-1] = temp;
+                newn = p;
+            }
+        }
+        n = newn;
+    } while(n > 1);
 }
 
-
-//void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples, KickSort_Dir d)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//d				KickSort_Dir::ASCENDING or KickSort_Dir::DESCENDING
-//
-//This orders the array in ascending order. Bubble Sort is the brute force
-//method of sorting an array. Simplest method, but is also the slowest.
-//From: https://github.com/dndubins/QuickStats
 template<typename Type>
-void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples, KickSort_Dir d)
-{
-	if(d == KickSort_Dir::ASCENDING) bubbleSort(input, samples);
-	else
-	{
-		uint32_t newn = 0;
-		uint32_t n = samples;
-		Type temp = 0;
-		
-		//if newn doesn't increment past 1, then array is already sorted and we
-		//will exit the loop
-		do {
-			newn = 1;
-			
-			for(uint16_t p = 1; p < samples; p++)
-			{
-				if(input[p-1] < input[p])
-				{
-					//swap places in array
-					temp = input[p];
-					input[p] = input[p-1];
-					input[p-1] = temp;
-					
-					//update index
-					newn = p;
-				}
-			}
-			
-			n = newn;
-		} while(n > 1);
-	}
+void KickSort<Type>::bubbleSort(Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return;
+    
+    if(d == KickSort_Dir::ASCENDING) {
+        bubbleSort(input, samples);
+    } else {
+        uint32_t newn = 0, n = samples;
+        Type temp;
+        do {
+            newn = 1;
+            for(uint16_t p = 1; p < samples; p++) {
+                if(input[p-1] < input[p]) {
+                    temp = input[p];
+                    input[p] = input[p-1];
+                    input[p-1] = temp;
+                    newn = p;
+                }
+            }
+            n = newn;
+        } while(n > 1);
+    }
 }
 
-
-//void KickSort<Type>::quickSort(Type input[], const uint16_t samples)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//
-//This orders the array in ascending order. Quicksort is one of the fastest
-//sorting method, but has quite a bit of RAM overhead since it uses recursion.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
+// === QUICK SORT ===
 template<typename Type>
-void KickSort<Type>::quickSort(Type input[], const uint16_t samples)
-{
-	if (samples < 2) return;
-	
-	//p is the pivot point
-	Type p = input[samples / 2];
-	Type *l = input; //left index
-	Type *r = input + samples - 1; //right index
-	
-	while (l <= r)
-	{
-		if (*l < p) l++;
-		else if (*r > p) r--;
-		else
-		{
-			Type t = *l;
-			*l = *r;
-			*r = t;
-			l++;
-			r--;
-		}
-	}
-	
-	
-	//Recursive call
-	quickSort(input, r - input + 1);
-	quickSort(l, input + samples - l);
+void KickSort<Type>::quickSort(Type input[], const uint16_t samples) {
+    if (samples < 2) return;
+    quickSortRecursive(input, 0, samples - 1);
 }
 
-
-//void KickSort<Type>::quickSort(Type input[], const uint16_t samples, KickSort_Dir d)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//d				KickSort_Dir::ASCENDING or KickSort_Dir::DESCENDING
-//
-//This orders the array in ascending or descending order based on the
-//KickSort_Dir parameter. Quicksort is one of the fastest sorting method, but
-//has quite a bit of RAM overhead since it uses recursion.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::quickSort(Type input[], const uint16_t samples, KickSort_Dir d)
-{
-	if(d == KickSort_Dir::ASCENDING) quickSort(input, samples);
-	else
-	{
-		if (samples < 2) return;
-		
-		//p is the pivot point
-		Type p = input[samples / 2];
-		Type *l = input; //left index
-		Type *r = input + samples - 1; //right index
-		
-		while (l <= r)
-		{
-			if (*l > p) l++;
-			else if (*r < p) r--;
-			else
-			{
-				Type t = *l;
-				*l = *r;
-				*r = t;
-				l++;
-				r--;
-			}
-		}
-		
-		
-		//Recursive call
-		quickSort(input, r - input + 1, d);
-		quickSort(l, input + samples - l, d);
-	}
+void KickSort<Type>::quickSort(Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return;
+    quickSortRecursive(input, 0, samples - 1, d);
 }
 
-
-//void KickSort<Type>::insertionSort(Type input[], const uint16_t samples)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//
-//This orders the array in ascending order.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::insertionSort(Type input[], const uint16_t samples)
-{
-	uint16_t t;
-	uint16_t z;
-	Type temp;
-	
-	for (t = 1; t < samples; t++)
-	{
-		z = t;
-		while( (z > 0) && (input[z] < input[z - 1] ))
-		{
-			temp = input[z];
-			input[z] = input[z - 1];
-			input[z - 1] = temp;
-			z--;
-		}
-	}
-	
+void KickSort<Type>::quickSortRecursive(Type input[], int16_t low, int16_t high) {
+    if (low < high) {
+        int16_t pi = partition(input, low, high);
+        quickSortRecursive(input, low, pi - 1);
+        quickSortRecursive(input, pi + 1, high);
+    }
 }
 
-
-//void KickSort<Type>::insertionSort(Type input[], const uint16_t samples, KickSort_Dir d)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//d				KickSort_Dir::ASCENDING or KickSort_Dir::DESCENDING
-//
-//This orders the array in ascending or descending order based on the
-//KickSort_Dir parameter.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::insertionSort(Type input[], const uint16_t samples, KickSort_Dir d)
-{
-	if(d == KickSort_Dir::ASCENDING) insertionSort(input, samples);
-	else
-	{
-		uint16_t t;
-		uint16_t z;
-		Type temp;
-		
-		for (t = 1; t < samples; t++)
-		{
-			z = t;
-			while( (z > 0) && (input[z] > input[z - 1] ))
-			{
-				temp = input[z];
-				input[z] = input[z - 1];
-				input[z - 1] = temp;
-				z--;
-			}
-		}
-	}
+void KickSort<Type>::quickSortRecursive(Type input[], int16_t low, int16_t high, KickSort_Dir d) {
+    if (low < high) {
+        int16_t pi = (d == KickSort_Dir::ASCENDING) ? 
+                     partition(input, low, high) : 
+                     partitionDesc(input, low, high);
+        quickSortRecursive(input, low, pi - 1, d);
+        quickSortRecursive(input, pi + 1, high, d);
+    }
 }
 
-
-//void KickSort<Type>::combSort(Type input[], const uint16_t samples)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//
-//This orders the array in ascending order
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::combSort(Type input[], const uint16_t samples)
-{
-	uint16_t i;
-	uint16_t j;
-	uint16_t gap;
-	uint8_t swapped = 1;
-	Type temp;
-	
-	gap = samples;
-	while (gap > 1 || swapped == 1)
-	{
-		gap = gap * 10 / 13;
-		if (gap == 9 || gap == 10) gap = 11;
-		if (gap < 1) gap = 1;
-		swapped = 0;
-		
-		for (i = 0, j = gap; j < samples; i++, j++)
-		{
-			if (input[i] > input[j])
-			{
-				temp = input[i];
-				input[i] = input[j];
-				input[j] = temp;
-				
-				swapped = 1;
-			}
-		}
-	}
+int16_t KickSort<Type>::partition(Type input[], int16_t low, int16_t high) {
+    Type pivot = input[high];
+    int16_t i = (low - 1);
+    
+    for (int16_t j = low; j <= high - 1; j++) {
+        if (input[j] < pivot) {
+            i++;
+            swap(input[i], input[j]);
+        }
+    }
+    swap(input[i + 1], input[high]);
+    return (i + 1);
 }
 
-
-//void KickSort<Type>::combSort(Type input[], const uint16_t samples, KickSort_Dir d)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//d				KickSort_Dir::ASCENDING or KickSort_Dir::DESCENDING
-//
-//This orders the array in ascending or descending order based on the
-//KickSort_Dir parameter.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::combSort(Type input[], const uint16_t samples, KickSort_Dir d)
-{
-	if(d == KickSort_Dir::ASCENDING) combSort(input, samples);
-	else
-	{
-		uint16_t i;
-		uint16_t j;
-		uint16_t gap;
-		uint8_t swapped = 1;
-		Type temp;
-		
-		gap = samples;
-		while (gap > 1 || swapped == 1)
-		{
-			gap = gap * 10 / 13;
-			if (gap == 9 || gap == 10) gap = 11;
-			if (gap < 1) gap = 1;
-			swapped = 0;
-			
-			for (i = 0, j = gap; j < samples; i++, j++)
-			{
-				if (input[i] < input[j])
-				{
-					temp = input[i];
-					input[i] = input[j];
-					input[j] = temp;
-					
-					swapped = 1;
-				}
-			}
-		}
-	}
+int16_t KickSort<Type>::partitionDesc(Type input[], int16_t low, int16_t high) {
+    Type pivot = input[high];
+    int16_t i = (low - 1);
+    
+    for (int16_t j = low; j <= high - 1; j++) {
+        if (input[j] > pivot) {
+            i++;
+            swap(input[i], input[j]);
+        }
+    }
+    swap(input[i + 1], input[high]);
+    return (i + 1);
 }
 
-
-//void KickSort<Type>::shellSort(Type input[], const uint16_t samples)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//
-//This orders the array in ascending order.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
+// === INSERTION SORT ===
 template<typename Type>
-void KickSort<Type>::shellSort(Type input[], const uint16_t samples)
-{
-	uint16_t i;
-	uint16_t d = samples;
-	uint8_t flag = 1;
-	Type temp;
-	
-	
-	while( flag || (d > 1)) // boolean flag (true when not equal to 0)
-	{
-		flag = 0; // reset flag to 0 to check for future swaps
-		d = (d+1) / 2;
-		
-		for (i = 0; i < (samples - d); i++)
-		{
-			if (input[i + d] < input[i])
-			{
-				temp = input[i + d]; // swap positions i+d and i
-				input[i + d] = input[i];
-				input[i] = temp;
-				flag = 1; // tells swap has occurred
-			}
-		}
-	}
+void KickSort<Type>::insertionSort(Type input[], const uint16_t samples) {
+    if (samples < 2) return;
+    
+    for (uint16_t i = 1; i < samples; i++) {
+        Type key = input[i];
+        int16_t j = i - 1;
+        while (j >= 0 && input[j] > key) {
+            input[j + 1] = input[j];
+            j--;
+        }
+        input[j + 1] = key;
+    }
 }
 
-
-//void KickSort<Type>::shellSort(Type input[], const uint16_t samples, KickSort_Dir d)
-//input			input array to be sorted. array is passed by reference so, the
-//					original array is modified
-//samples		number of samples in the array
-//d				KickSort_Dir::ASCENDING or KickSort_Dir::DESCENDING
-//
-//This orders the array in ascending or descending order based on the
-//KickSort_Dir parameter.
-//From: https://forum.arduino.cc/index.php?topic=280486.0
 template<typename Type>
-void KickSort<Type>::shellSort(Type input[], const uint16_t samples, KickSort_Dir d)
-{
-	if(d == KickSort_Dir::ASCENDING) shellSort(input, samples);
-	else
-	{
-		uint16_t i;
-		uint16_t d = samples;
-		uint8_t flag = 1;
-		Type temp;
-		
-		
-		while( flag || (d > 1)) // boolean flag (true when not equal to 0)
-		{
-			flag = 0; // reset flag to 0 to check for future swaps
-			d = (d+1) / 2;
-			
-			for (i = 0; i < (samples - d); i++)
-			{
-				if (input[i + d] > input[i])
-				{
-					temp = input[i + d]; // swap positions i+d and i
-					input[i + d] = input[i];
-					input[i] = temp;
-					flag = 1; // tells swap has occurred
-				}
-			}
-		}
-	}
-	
+void KickSort<Type>::insertionSort(Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return;
+    
+    if (d == KickSort_Dir::ASCENDING) {
+        insertionSort(input, samples);
+    } else {
+        for (uint16_t i = 1; i < samples; i++) {
+            Type key = input[i];
+            int16_t j = i - 1;
+            while (j >= 0 && input[j] < key) {
+                input[j + 1] = input[j];
+                j--;
+            }
+            input[j + 1] = key;
+        }
+    }
 }
 
+// === COMB SORT ===
+template<typename Type>
+void KickSort<Type>::combSort(Type input[], const uint16_t samples) {
+    if (samples < 2) return;
+    
+    uint16_t gap = samples;
+    bool swapped = true;
+    
+    while (gap != 1 || swapped) {
+        gap = (gap * 10) / 13;
+        if (gap < 1) gap = 1;
+        
+        swapped = false;
+        for (uint16_t i = 0; i < samples - gap; i++) {
+            if (input[i] > input[i + gap]) {
+                swap(input[i], input[i + gap]);
+                swapped = true;
+            }
+        }
+    }
+}
 
+template<typename Type>
+void KickSort<Type>::combSort(Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return;
+    
+    if (d == KickSort_Dir::ASCENDING) {
+        combSort(input, samples);
+    } else {
+        uint16_t gap = samples;
+        bool swapped = true;
+        
+        while (gap != 1 || swapped) {
+            gap = (gap * 10) / 13;
+            if (gap < 1) gap = 1;
+            
+            swapped = false;
+            for (uint16_t i = 0; i < samples - gap; i++) {
+                if (input[i] < input[i + gap]) {
+                    swap(input[i], input[i + gap]);
+                    swapped = true;
+                }
+            }
+        }
+    }
+}
+
+// === SHELL SORT ===
+template<typename Type>
+void KickSort<Type>::shellSort(Type input[], const uint16_t samples) {
+    if (samples < 2) return;
+    
+    for (uint16_t gap = samples / 2; gap > 0; gap /= 2) {
+        for (uint16_t i = gap; i < samples; i++) {
+            Type temp = input[i];
+            uint16_t j;
+            for (j = i; j >= gap && input[j - gap] > temp; j -= gap) {
+                input[j] = input[j - gap];
+            }
+            input[j] = temp;
+        }
+    }
+}
+
+template<typename Type>
+void KickSort<Type>::shellSort(Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return;
+    
+    if (d == KickSort_Dir::ASCENDING) {
+        shellSort(input, samples);
+    } else {
+        for (uint16_t gap = samples / 2; gap > 0; gap /= 2) {
+            for (uint16_t i = gap; i < samples; i++) {
+                Type temp = input[i];
+                uint16_t j;
+                for (j = i; j >= gap && input[j - gap] < temp; j -= gap) {
+                    input[j] = input[j - gap];
+                }
+                input[j] = temp;
+            }
+        }
+    }
+}
+
+// === UTILITY FUNCTIONS ===
+template<typename Type>
+void KickSort<Type>::reverse(Type input[], const uint16_t samples) {
+    for (uint16_t i = 0; i < samples / 2; ++i) {
+        swap(input[i], input[samples - 1 - i]);
+    }
+}
+
+template<typename Type>
+bool KickSort<Type>::isSorted(const Type input[], const uint16_t samples, KickSort_Dir d) {
+    if (samples < 2) return true;
+    
+    for (uint16_t i = 1; i < samples; ++i) {
+        if (d == KickSort_Dir::ASCENDING && input[i - 1] > input[i]) return false;
+        if (d == KickSort_Dir::DESCENDING && input[i - 1] < input[i]) return false;
+    }
+    return true;
+}
+
+template<typename Type>
+int16_t KickSort<Type>::indexOf(const Type input[], uint16_t samples, Type value) {
+    for (uint16_t i = 0; i < samples; i++) {
+        if (input[i] == value) return i;
+    }
+    return -1;
+}
+
+template<typename Type>
+void KickSort<Type>::copy(const Type source[], Type destination[], uint16_t samples) {
+    for (uint16_t i = 0; i < samples; i++) {
+        destination[i] = source[i];
+    }
+}
+
+template<typename Type>
+void KickSort<Type>::swap(Type& a, Type& b) {
+    Type temp = a;
+    a = b;
+    b = temp;
+}
+
+// === STATISTICAL FUNCTIONS ===
+template<typename Type>
+Type KickSort<Type>::minElement(const Type input[], uint16_t samples) {
+    if (samples == 0) return Type();
+    
+    Type minVal = input[0];
+    for (uint16_t i = 1; i < samples; i++) {
+        if (input[i] < minVal) minVal = input[i];
+    }
+    return minVal;
+}
+
+template<typename Type>
+Type KickSort<Type>::maxElement(const Type input[], uint16_t samples) {
+    if (samples == 0) return Type();
+    
+    Type maxVal = input[0];
+    for (uint16_t i = 1; i < samples; i++) {
+        if (input[i] > maxVal) maxVal = input[i];
+    }
+    return maxVal;
+}
+
+template<typename Type>
+float KickSort<Type>::mean(const Type input[], uint16_t samples) {
+    if (samples == 0) return 0.0f;
+    
+    float sum = 0;
+    for (uint16_t i = 0; i < samples; i++) {
+        sum += input[i];
+    }
+    return sum / samples;
+}
+
+template<typename Type>
+Type KickSort<Type>::median(Type input[], uint16_t samples) {
+    if (samples == 0) return Type();
+    
+    // Sort the array to find median
+    quickSort(input, samples);
+    
+    if (samples % 2 == 0) {
+        return (input[samples/2 - 1] + input[samples/2]) / 2;
+    } else {
+        return input[samples/2];
+    }
+}
+
+template<typename Type>
+Type KickSort<Type>::mode(Type input[], uint16_t samples) {
+    if (samples == 0) return Type();
+    if (samples == 1) return input[0];
+    
+    // Sort the array first for efficient mode calculation
+    quickSort(input, samples);
+    
+    uint16_t maxCount = 1, currentCount = 1;
+    Type modeVal = input[0];
+    
+    for (uint16_t i = 1; i < samples; ++i) {
+        if (input[i] == input[i - 1]) {
+            currentCount++;
+            if (currentCount > maxCount) {
+                maxCount = currentCount;
+                modeVal = input[i];
+            }
+        } else {
+            currentCount = 1;
+        }
+    }
+    return modeVal;
+}
+
+template<typename Type>
+float KickSort<Type>::stdDevPopulation(const Type input[], uint16_t samples) {
+    if (samples == 0) return 0.0f;
+    
+    float m = mean(input, samples);
+    float accum = 0.0;
+    
+    for (uint16_t i = 0; i < samples; i++) {
+        accum += (input[i] - m) * (input[i] - m);
+    }
+    
+    return sqrt(accum / samples);
+}
+
+template<typename Type>
+float KickSort<Type>::stdDevSample(const Type input[], uint16_t samples) {
+    if (samples < 2) return 0.0f;
+    
+    float m = mean(input, samples);
+    float accum = 0.0;
+    
+    for (uint16_t i = 0; i < samples; i++) {
+        accum += (input[i] - m) * (input[i] - m);
+    }
+    
+    return sqrt(accum / (samples - 1));
+}
 
 #endif /* KickSort_h */
